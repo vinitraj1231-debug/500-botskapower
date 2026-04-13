@@ -1,0 +1,8 @@
+pyrogram
+tgcrypto
+yt-dlp
+motor
+pymongo
+python-dotenv
+youtube-search-python
+ntgcalls

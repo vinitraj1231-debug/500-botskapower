@@ -1,44 +1,45 @@
+import os
+import asyncio
+import importlib
 from pyrogram import Client, filters
+from config import API_ID, API_HASH, BOT_TOKEN
+from database.db import get_clones
 
-# ⚠️ Yahan apna NEW token dalna (old wala use mat karna)
-BOT_TOKEN = "8691837145:AAHVgKQVHl9DAdWTYun-cuoDm1G0kaHBKPs"
-API_ID = 8756786934        # my.telegram.org se lo
-API_HASH = "your_api_hash"
+class AdvancedBot(Client):
+    def __init__(self):
+        super().__init__(
+            "AdvancedBot",
+            api_id=API_ID,
+            api_hash=API_HASH,
+            bot_token=BOT_TOKEN,
+            plugins=dict(root="plugins")
+        )
 
-app = Client(
-    "my_bot",
-    api_id=API_ID,
-    api_hash=API_HASH,
-    bot_token=BOT_TOKEN
-)
+    async def start(self):
+        await super().start()
+        print("Main Bot Started! 🚀")
 
-# Start command
-@app.on_message(filters.command("start"))
-async def start(client, message):
-    await message.reply_text(
-        f"Hello {message.from_user.first_name} 👋\n\n"
-        "Main tumhara advanced Telegram bot hoon 🚀"
-    )
+        # Start clones
+        clones = await get_clones()
+        for clone_data in clones:
+            try:
+                token = clone_data["bot_token"]
+                client = Client(
+                    name=f"clone_{token[:10]}",
+                    api_id=API_ID,
+                    api_hash=API_HASH,
+                    bot_token=token,
+                    plugins=dict(root="plugins")
+                )
+                await client.start()
+                print(f"Clone started for token: {token[:10]}...")
+            except Exception as e:
+                print(f"Failed to start clone: {e}")
 
-# Help command
-@app.on_message(filters.command("help"))
-async def help_cmd(client, message):
-    await message.reply_text(
-        "/start - Bot start\n"
-        "/help - Help menu\n"
-        "/id - Tumhari ID"
-    )
+    async def stop(self, *args):
+        await super().stop()
+        print("Bot Stopped!")
 
-# User ID check
-@app.on_message(filters.command("id"))
-async def get_id(client, message):
-    await message.reply_text(
-        f"👤 Your ID: {message.from_user.id}"
-    )
-
-# Echo system (jo likhega wahi reply)
-@app.on_message(filters.text & ~filters.command(["start", "help", "id"]))
-async def echo(client, message):
-    await message.reply_text(f"Echo: {message.text}")
-
-app.run()
+if __name__ == "__main__":
+    app = AdvancedBot()
+    app.run()
